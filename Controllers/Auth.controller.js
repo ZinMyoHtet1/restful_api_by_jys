@@ -49,9 +49,9 @@ export default {
           ? `https://myapp-jys.onrender.com/auth/verify/${id}`
           : `http://localhost:${process.env.PORT}/auth/verify/${id}`;
 
-      const verification_link = `http://localhost:${
-        process.env.PORT || "3000"
-      }/auth/verify/${id}`;
+      // const verification_link = `http://localhost:${
+      //   process.env.PORT || "3000"
+      // }/auth/verify/${id}`;
 
       mailer
         .setTo(result.email)
@@ -96,11 +96,9 @@ export default {
         const verification_link =
           process.env.NODE_ENV === "production"
             ? `https://myapp-jys.onrender.com/auth/verify/${id}`
-            : `http://localhost:${
-                process.env.PORT || "3000"
-              }/auth/verify/${id}`;
+            : `http://localhost:${process.env.PORT}/auth/verify/${id}`;
 
-        const verification_link = `http://localhost:${process.env.PORT}/auth/verify/${id}`;
+        // const verification_link = `http://localhost:${process.env.PORT}/auth/verify/${id}`;
 
         mailer
           .setTo(result.email)
