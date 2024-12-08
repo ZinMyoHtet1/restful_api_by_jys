@@ -89,15 +89,23 @@ export default {
           // password: result.password,
         });
 
+        const verification_link =
+          process.env.NODE_ENV === "production"
+            ? `https://myapp-jys.onrender.com/auth/verify/${id}`
+            : `http://localhost:${
+                process.env.PORT || "3000"
+              }/auth/verify/${id}`;
+
         mailer
           .setTo(result.email)
           .setSubject("Verification Email")
           .setHtml(verificationEmailTemplate)
-          .replaceHtmlText("{{PORT}}", 3000)
-          .replaceHtmlText("{{ID}}", id)
+          .replaceHtmlText("{{VERIFICATION_LINK}}", verification_link)
           .send()
           .then((info) => {
-            res.send("Email Sent : Please check your email to verify");
+            res.send(
+              "Your account is not verified yet : Please check your email to verify"
+            );
           })
           .catch((error) => {
             console.log(error, "error");
@@ -205,7 +213,6 @@ export default {
 
   verifyID: async (req, res, next) => {
     try {
-      console.log("verify");
       const { email, name } = req?.user;
       if (!email && !name) throw createError.Unauthorized();
       const user = await User.findOne({ email: req.user.email });
