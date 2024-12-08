@@ -2,6 +2,8 @@ import JWT from "jsonwebtoken";
 import createError from "http-errors";
 
 import client from "./redis_init.js";
+import shortURL from "./ShortURL.js";
+import { ramdomStr } from "./index.js";
 
 const signAccessToken = (userId) => {
   return new Promise((resolve, reject) => {
@@ -87,20 +89,53 @@ const verifyRefreshToken = (token) => {
   });
 };
 
-/**
- * @param {object} payload
- * @returns
- */
-
-const generateAccessToken = (payload) => {
+const generateVerificationId = (payload) => {
   if (!payload)
     throw new Error("payload is required for generating accessToken");
+
+  const token = JWT.sign(payload, process.env.VERIFICATION_TOKEN_SECRET, {
+    algorithm: "HS256",
+    expiresIn: "5m",
+  });
+  const id = ramdomStr(12);
+  shortURL.set(id, token);
+  return id;
 };
 
+const verifyVerificationId = (req, res, next) => {
+  const { id } = req.params;
+  if (!id) throw createError.BadRequest();
+  const token = shortURL.get(id);
+  const isVerified = JWT.verify(
+    token,
+    process.env.VERIFICATION_TOKEN_SECRET,
+    (err, decodedToken) => {
+      if (err) {
+        return {
+          status: false,
+          message: err.message,
+        };
+      }
+      return {
+        status: true,
+        payload: decodedToken,
+        message: "Successfully verify your email",
+      };
+    }
+  );
+  if (isVerified?.status) {
+    req.user = isVerified?.payload;
+    next();
+  } else {
+    res.status(400).send({ message: isVerified.message });
+  }
+};
 
 export {
   signAccessToken,
   verifyAccessToken,
   signRefreshToken,
   verifyRefreshToken,
+  generateVerificationId,
+  verifyVerificationId,
 };

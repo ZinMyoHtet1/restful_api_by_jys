@@ -2,8 +2,12 @@ import createError from "http-errors";
 import Joi from "@hapi/joi";
 
 import User from "../Models/User.model.js";
-import { userSchemaValidation } from "../Helpers/validation_schema.js";
 import {
+  userLoginValidation,
+  userRegisterValidation,
+} from "../Helpers/validation_schema.js";
+import {
+  generateVerificationId,
   signAccessToken,
   signRefreshToken,
   verifyRefreshToken,
@@ -15,23 +19,49 @@ import mailer from "../Helpers/Mailer.js";
 
 const emailValidation = Joi.string().email().required();
 
+const verificationEmailTemplate = readFileSync(
+  "../Html/verificationEmail.html"
+);
+
 export default {
   register: async (req, res, next) => {
     try {
       // const { email, password } = req.body;
-      const result = await userSchemaValidation.validateAsync(req.body);
+      const result = await userRegisterValidation.validateAsync(req.body);
       // if (!email && !password) throw createError.BadRequest();
       const isExisted = await User.findOne({ email: result.email });
       if (isExisted)
         throw createError.Conflict(
           `${result.email} already had been registered`
         );
-      const user = new User(result);
-      const savedUser = await user.save();
-      const accessToken = await signAccessToken(savedUser.id);
-      const refreshToken = await signRefreshToken(savedUser.id);
 
-      res.send({ accessToken, refreshToken });
+      const user = new User(result);
+      await user.save();
+
+      const id = generateVerificationId({
+        name: result.name,
+        email: result.email,
+        // password: result.password,
+      });
+      mailer
+        .setTo(result.email)
+        .setSubject("Verification Email")
+        .setHtml(verificationEmailTemplate)
+        .replaceHtmlText("{{PORT}}", 3000)
+        .replaceHtmlText("{{ID}}", id)
+        .send()
+        .then((info) => {
+          res.send("Email Sent : Please check your email to verify");
+        })
+        .catch((error) => {
+          throw createError.InternalServerError(error.message);
+        });
+      // const user = new User(result);
+      // const savedUser = await user.save();
+      // const accessToken = await signAccessToken(savedUser.id);
+      // const refreshToken = await signRefreshToken(savedUser.id);
+
+      // res.send({ accessToken, refreshToken });
     } catch (error) {
       if (error.isJoi === true) error.status = 422;
       next(error);
@@ -40,17 +70,41 @@ export default {
 
   login: async (req, res, next) => {
     try {
-      const result = await userSchemaValidation.validateAsync(req.body);
+      const result = await userLoginValidation.validateAsync(req.body);
       const user = await User.findOne({ email: result.email });
       if (!user) throw createError.NotFound(`${result.email} is not found`);
 
       const isMatch = await user.isValidatePassword(result.password);
       if (!isMatch) throw createError.Unauthorized("Password is not correct");
 
-      const accessToken = await signAccessToken(user.id);
-      const refreshToken = await signRefreshToken(user.id);
+      if (!user.isVerified) {
+        console.log("not verified");
+        const id = generateVerificationId({
+          name: user.name,
+          email: user.email,
+          // password: result.password,
+        });
 
-      res.send({ accessToken, refreshToken });
+        mailer
+          .setTo(result.email)
+          .setSubject("Verification Email")
+          .setHtml(verificationEmailTemplate)
+          .replaceHtmlText("{{PORT}}", 3000)
+          .replaceHtmlText("{{ID}}", id)
+          .send()
+          .then((info) => {
+            res.send("Email Sent : Please check your email to verify");
+          })
+          .catch((error) => {
+            console.log(error, "error");
+            throw createError.InternalServerError(error.message);
+          });
+      } else {
+        const accessToken = await signAccessToken(user.id);
+        const refreshToken = await signRefreshToken(user.id);
+
+        res.send({ accessToken, refreshToken });
+      }
     } catch (error) {
       if (error.isJoi === true) throw next(createError.BadRequest());
       next(error);
@@ -140,6 +194,27 @@ export default {
       } else {
         throw createError.Unauthorized("Invalid credentials");
       }
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  verifyID: async (req, res, next) => {
+    try {
+      console.log("verify");
+      const { email, name } = req?.user;
+      if (!email && !name) throw createError.Unauthorized();
+      const user = await User.findOne({ email: req.user.email });
+
+      if (!user) throw createError.NotFound(`${email} is not registered`);
+      const verifiedUser = await User.findOneAndUpdate(
+        { email },
+        { $set: { isVerified: true } }
+      );
+
+      const accessToken = await signAccessToken(verifiedUser.id);
+      const refreshToken = await signRefreshToken(verifiedUser.id);
+      res.send({ accessToken, refreshToken });
     } catch (error) {
       next(error);
     }
