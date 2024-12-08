@@ -9,7 +9,6 @@ import mailerRoutes from "./Routes/Mailer.route.js";
 
 import morgan from "morgan";
 import "./Helpers/mongoose_init.js";
-import { verifyAccessToken } from "./Helpers/jwt_helper.js";
 import "./Helpers/redis_init.js";
 
 const app = express();
