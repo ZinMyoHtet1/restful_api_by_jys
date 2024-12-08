@@ -43,12 +43,17 @@ export default {
         email: result.email,
         // password: result.password,
       });
+
+      const verification_link =
+        process.env.NODE_ENV === "production"
+          ? `https://myapp-jys.onrender.com/auth/verify/${id}`
+          : `http://localhost:${process.env.PORT || "3000"}/auth/verify/${id}`;
+
       mailer
         .setTo(result.email)
         .setSubject("Verification Email")
         .setHtml(verificationEmailTemplate)
-        .replaceHtmlText("{{PORT}}", 3000)
-        .replaceHtmlText("{{ID}}", id)
+        .replaceHtmlText("{{VERIFICATION_LINK}}", verification_link)
         .send()
         .then((info) => {
           res.send("Email Sent : Please check your email to verify");
@@ -78,7 +83,6 @@ export default {
       if (!isMatch) throw createError.Unauthorized("Password is not correct");
 
       if (!user.isVerified) {
-        console.log("not verified");
         const id = generateVerificationId({
           name: user.name,
           email: user.email,

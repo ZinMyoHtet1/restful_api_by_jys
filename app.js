@@ -19,8 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 app.get("/", async (req, res) => {
-  console.log(req.url, req.method);
-  res.send("Response from API");
+  res.status(200).send("Response from API");
 });
 
 // app.get("/send-email", async (req, res) => {

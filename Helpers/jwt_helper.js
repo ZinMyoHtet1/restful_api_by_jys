@@ -1,7 +1,7 @@
 import JWT from "jsonwebtoken";
 import createError from "http-errors";
 
-import client from "./redis_init.js";
+// import client from "./redis_init.js";
 import shortURL from "./ShortURL.js";
 import { ramdomStr } from "./index.js";
 
@@ -59,13 +59,14 @@ const signRefreshToken = (userId) => {
           reject(createError.InternalServerError());
           return;
         }
-        client
-          .SET(userId, token, {
-            EX: 365 * 24 * 60 * 60,
-            NX: true,
-          })
-          .then(() => resolve(token))
-          .catch((err) => reject(createError.InternalServerError(err.message)));
+        resolve(token);
+        //   client
+        //     .SET(userId, token, {
+        //       EX: 365 * 24 * 60 * 60,
+        //       NX: true,
+        //     })
+        //     .then(() => resolve(token))
+        //     .catch((err) => reject(createError.InternalServerError(err.message)));
       }
     );
   });
@@ -76,15 +77,16 @@ const verifyRefreshToken = (token) => {
     JWT.verify(token, process.env.REFRESH_TOKEN_SECRET, (err, payload) => {
       if (err) return reject(createError.InternalServerError());
       const userId = payload.aud;
+      resolve(userId);
 
-      client
-        .GET(userId)
-        .then((result) => {
-          if (token === result) return resolve(userId);
-          reject(createError.Unauthorized());
-          return;
-        })
-        .catch((err) => reject(createError.InternalServerError(err.message)));
+      //   client
+      //     .GET(userId)
+      //     .then((result) => {
+      //       if (token === result) return resolve(userId);
+      //       reject(createError.Unauthorized());
+      //       return;
+      //     })
+      //     .catch((err) => reject(createError.InternalServerError(err.message)));
     });
   });
 };
