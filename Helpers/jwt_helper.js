@@ -87,6 +87,17 @@ const verifyRefreshToken = (token) => {
   });
 };
 
+/**
+ * @param {object} payload
+ * @returns
+ */
+
+const generateAccessToken = (payload) => {
+  if (!payload)
+    throw new Error("payload is required for generating accessToken");
+};
+
+
 export {
   signAccessToken,
   verifyAccessToken,

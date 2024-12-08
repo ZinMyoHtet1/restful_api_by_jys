@@ -11,4 +11,8 @@ route.get("/refresh-token", authController.refresh_token);
 
 route.delete("/logout", authController.logout);
 
+route.post("/forget-password", authController.forgetPassword);
+
+route.post("/verify-otp", authController.verifyOTP);
+
 export default route;

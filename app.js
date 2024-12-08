@@ -5,6 +5,7 @@ import "dotenv/config";
 
 import authRoutes from "./Routes/Auth.route.js";
 import productRoutes from "./Routes/Product.route.js";
+import mailerRoutes from "./Routes/Mailer.route.js";
 
 import morgan from "morgan";
 import "./Helpers/mongoose_init.js";
@@ -23,8 +24,28 @@ app.get("/", async (req, res) => {
   res.send("Response from API");
 });
 
+// app.get("/send-email", async (req, res) => {
+//   try {
+//     const mail = new Mail();
+//     await mail
+//       .compose(
+//         "janyeongsil11223344@gmail.com",
+//         "Sending email using Nodejs",
+//         "Hello It's me"
+//       )
+//       .then((info) => {
+//         res.send("Email Sent : " + info.response);
+//       })
+//       .catch((error) => {
+//         throw createError.InternalServerError(error.message);
+//       });
+//   } catch (error) {
+//     console.log(error);
+//   }
+
 app.use("/auth", authRoutes);
 app.use("/products", productRoutes);
+app.use("/mail", mailerRoutes);
 
 app.use(async (req, res, next) => {
   //   const error = new Error("Not Found");

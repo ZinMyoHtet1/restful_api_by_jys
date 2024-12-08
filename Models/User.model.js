@@ -30,14 +30,6 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-// userSchema.post("save", async function (next) {
-//   try {
-//     console.log("after save");
-//   } catch (error) {
-//     next(error);
-//   }
-// });
-
 userSchema.methods.isValidatePassword = async function (password) {
   try {
     return await bcrypt.compare(password, this.password);
